@@ -153,8 +153,4 @@ Past backtest performance does not guarantee future results. All win rates and r
 
 Published under the Mozilla Public License 2.0. Free to use, study, modify, and distribute.
 
-The three changes made:
 
-- Added the signal arrows / Symbol 1 clarification block under "How It Gives You Signals"
-- Grouped the no-repaint and no-lookahead statements into explicit bullet points with ✅
-- Made the disclaimer opening sentence a bold standalone statement before the performance caveat

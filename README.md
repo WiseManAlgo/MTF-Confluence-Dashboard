@@ -164,6 +164,6 @@ Past backtest performance does not guarantee future results. All win rates and r
 
 **Open Source**
 
-Published under the Mozilla Public License 2.0. Free to use, study, modify, and distribute.
+Published under the Mozilla Public License 2.0. Copyright © 2026 WiseManAlgo. Free to use, study, modify, and distribute.
 
 

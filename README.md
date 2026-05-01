@@ -143,6 +143,18 @@ And it's **100% open source and transparent**:
 - ✅ No hidden calculations — every line of logic is in the open source code
 - You can read, modify, and build on it however you want. Just credit the original.
 
+**Important Q&A**
+**Why am I only seeing green arrows even when price is dropping?**
+
+Because price dropping for a few candles on your chart is not the same thing as the market environment turning bearish.
+
+This indicator gives much heavier weight to the Daily and Weekly timeframes. Those move slowly by design — they define the big picture, not the noise. A 4H correction inside a Weekly bull trend will not flip the score negative. The indicator will keep pointing you towards longs because statistically, that is still the right side to be on.
+Red arrows appear when the environment genuinely shifts — when Daily and Weekly momentum both turn south and stay there. That is a regime change, not a dip.
+
+**If you’re looking to trade say every 4H short-term wiggle, this isn’t the right tool.**
+
+**This indicator is built for those who follow the bigger trend — not trade against it.**
+
 **Important Disclaimer**
 
 **This indicator is for informational and educational purposes only. It is not financial advice, investment advice, or a recommendation to buy or sell any asset.**

@@ -143,7 +143,8 @@ And it's **100% open source and transparent**:
 - ✅ No hidden calculations — every line of logic is in the open source code
 - You can read, modify, and build on it however you want. Just credit the original.
 
-**Important Q&A**
+**⚠️ Important:** **⚠️ Important:** **⚠️ Important:**
+
 **Why am I only seeing green arrows even when price is dropping?**
 
 Because price dropping for a few candles on your chart is not the same thing as the market environment turning bearish.

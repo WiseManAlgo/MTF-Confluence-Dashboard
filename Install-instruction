@@ -1,0 +1,40 @@
+# install-instruction.md
+# MTF Confluence Dashboard – Installation Guide
+**10-second setup | 100% free | Works on all TradingView accounts (Basic included)**
+
+---
+
+## Step 1: Get the Code
+1. Go to the GitHub repository:
+   https://github.com/WiseManAlgo/MTF-Confluence-Dashboard
+2. Open the main script file: `mtf-confluencet.pine`
+3. Click the **Copy raw content** button (top-right of the code box) to copy all code to your clipboard.
+
+## Step 2: Open TradingView Pine Editor
+1. Go to [TradingView](https://www.tradingview.com) and open any chart.
+2. At the **bottom** of the screen, click the **Pine Editor** tab.
+
+## Step 3: Paste & Activate
+1. Delete any existing code in the Pine Editor.
+2. Paste the code you copied from GitHub.
+3. Click **Add to Chart** (or press `Ctrl + Enter` / `Cmd + Enter`).
+
+## Done!
+Your MTF Confluence Dashboard will appear immediately on your chart.
+
+---
+
+## Notes
+- No repainting
+- No lookahead bias
+- No premium subscription required
+- Automatically updates when you refresh the code
+
+---
+
+## Troubleshooting
+If the indicator does not load:
+1. Make sure you pasted **all code** correctly.
+2. Check for empty lines or missing text at the top/bottom.
+3. Re-copy and re-paste the full code.
+

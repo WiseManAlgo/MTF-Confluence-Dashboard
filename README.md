@@ -10,7 +10,7 @@ This is a **free, open-source, no-BS TradingView indicator** that lets you see t
 [MTF Dasboard Bull 2026-05-01 23.40.12.png](https://github.com/WiseManAlgo/MTF-Confluence-Dashboard/blob/3e2f982541e0650b09170be231af916051772548/MTF_Dasboard_Bull_%202026-05-01_23.40.12.png)
 
 **BEAR Market Screenshot**
-
+https://github.com/WiseManAlgo/MTF-Confluence-Dashboard/blob/1a04af177cdf66660e2ffa9173476bff0cfe033c/MTF_Dashboard%20_Bear_2026-05-01_23.25.34.png
 
 **The Annoying Problem It Solves**
 

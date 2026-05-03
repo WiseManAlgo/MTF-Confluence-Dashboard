@@ -6,6 +6,8 @@
 
 This is a **free, open-source, no-BS TradingView indicator** that lets you see the market direction across 5 timeframes at a single glance. No more flipping between 5 open tabs.
 
+MTF Dasboard Bull 2026-05-01 23.40.12.png
+
 **The Annoying Problem It Solves**
 
 Every trader knows the rule:

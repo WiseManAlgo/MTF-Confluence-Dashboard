@@ -7,12 +7,12 @@
 This is a **free, open-source, no-BS TradingView indicator** that lets you see the market direction across 5 timeframes at a single glance. No more flipping between 5 open tabs.
 
 **BULL Market Screenshot**
-[MTF Dashboard Bull 2026-05-01 23.40.12.png](https://github.com/WiseManAlgo/MTF-Confluence-Dashboard/blob/3e2f982541e0650b09170be231af916051772548/MTF_Dashboard_Bull_2026-05-01_23.40.12.png？raw=true)
 
 ![MTF Dashboard Bull Market Screenshot](https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/0cd59e00dc881d086a2c774ca3b52c80d8bba68a/MTF_Dashboard_Bull_2026-05-01_23.40.12.png)
 
 **BEAR Market Screenshot**
-[MTF Dashboard Bear 2025-05-01 23.25.34.png](https://github.com/WiseManAlgo/MTF-Confluence-Dashboard/blob/1a04af177cdf66660e2ffa9173476bff0cfe033c/MTF_Dashboard%20_Bear_2026-05-01_23.25.34.png?raw=true)
+
+![MTF Dashboard Bear Market Screenshot](https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/6a0043298f3a157df7f2ba45edb2461581f67787/MTF_Dashboard%20_Bear_2026-05-01_23.25.34.png)
 
 **The Annoying Problem It Solves**
 

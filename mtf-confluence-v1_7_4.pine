@@ -1,0 +1,314 @@
+//@version=5
+indicator("MTF Confluence Dashboard v1.7.4", shorttitle="MTF Confluence Dashboard v1.7.4", overlay=true, max_lines_count=50, max_labels_count=50)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Assets
+// ─────────────────────────────────────────────────────────────────────────────
+var string GRP_ASSETS = "Assets"
+
+sym1 = input.symbol("BTCUSD", "Symbol 1", group=GRP_ASSETS, display=display.none)
+sym2 = input.symbol("AAPL",   "Symbol 2", group=GRP_ASSETS, display=display.none)
+sym3 = input.symbol("SPY",    "Symbol 3", group=GRP_ASSETS, display=display.none)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Timeframes
+// ─────────────────────────────────────────────────────────────────────────────
+var string GRP_TF = "Timeframes"
+tf1 = input.timeframe("15",  "TF 1", group=GRP_TF, display=display.none)
+tf2 = input.timeframe("60",  "TF 2", group=GRP_TF, display=display.none)
+tf3 = input.timeframe("240", "TF 3", group=GRP_TF, display=display.none)
+tf4 = input.timeframe("D",   "TF 4", group=GRP_TF, display=display.none)
+tf5 = input.timeframe("W",   "TF 5", group=GRP_TF, display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Scoring: EMA
+// ─────────────────────────────────────────────────────────────────────────────
+ema_fast = input.int(5, "Fast EMA Period", minval=1, group="Scoring — EMA", display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Scoring: RSI
+// ─────────────────────────────────────────────────────────────────────────────
+rsi_len     = input.int(7,  "RSI Period",     minval=2, group="Scoring — RSI", display=display.none)
+rsi_sma_len = input.int(20, "RSI SMA Period", minval=2, group="Scoring — RSI", display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Scoring: TF Weights
+// ─────────────────────────────────────────────────────────────────────────────
+w1 = input.float(0.5, "Weight TF1", minval=0.0, step=0.1, group="Scoring — TF Weights", display=display.none)
+w2 = input.float(1.0, "Weight TF2", minval=0.0, step=0.1, group="Scoring — TF Weights", display=display.none)
+w3 = input.float(1.5, "Weight TF3", minval=0.0, step=0.1, group="Scoring — TF Weights", display=display.none)
+w4 = input.float(2.0, "Weight TF4", minval=0.0, step=0.1, group="Scoring — TF Weights", display=display.none)
+w5 = input.float(2.0, "Weight TF5", minval=0.0, step=0.1, group="Scoring — TF Weights", display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Signal
+// ─────────────────────────────────────────────────────────────────────────────
+sig_threshold = input.float(7.0, "Signal Threshold (±)", minval=0.1, step=0.5, group="Signal", display=display.none)
+show_arrows   = input.bool(true, "Show Signal Arrows on Chart", group="Signal", display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Volume Filter
+// ─────────────────────────────────────────────────────────────────────────────
+use_vol_filter = input.bool(false, "Enable Volume Filter", group="Volume Filter", tooltip="When enabled, a signal only fires if the current bar's volume exceeds the 20-period volume SMA. This helps filter low-conviction signals during thin markets. DISCLAIMER: This filter may suppress valid signals on assets with unreliable volume data — including crypto feeds that report zero-volume bars — and on equities during mid-session low-volume periods. Recommended OFF for most assets. Default: OFF.", display=display.none)
+vol_sma_len    = input.int(20,   "Volume SMA Period",      minval=1, group="Volume Filter", display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INPUTS — Dashboard Display
+// ─────────────────────────────────────────────────────────────────────────────
+var string GRP_UI = "Dashboard"
+dash_pos     = input.string("Top Right", "Position", options=["Top Right","Top Left","Bottom Right","Bottom Left"], group=GRP_UI, display=display.none)
+show_vol_col = input.bool(true, "Show Volume Filter Column", group=GRP_UI, display=display.none)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE SCORING FUNCTION — f_tf_score(sym, tf)
+//
+// Fetches close, fast EMA, RSI, and RSI-SMA for a given symbol+timeframe.
+// Returns three independent votes with no AND gate — partial evidence is valid.
+//
+// ema_vote : close vs fast EMA  → +1 bull / -1 bear / 0 neutral
+// rsi_vote : RSI vs RSI SMA     → +1 bull / -1 bear / 0 neutral
+// raw_score: ema_vote + rsi_vote → range {-2, -1, 0, +1, +2}
+// ─────────────────────────────────────────────────────────────────────────────
+f_tf_score(sym, tf) =>
+    [c, ef, rv, rs] = request.security(sym, tf, [close, ta.ema(close, ema_fast), ta.rsi(close, rsi_len), ta.sma(ta.rsi(close, rsi_len), rsi_sma_len)], lookahead=barmerge.lookahead_off)
+    ema_vote  = c > ef ? 1 : c < ef ? -1 : 0
+    rsi_vote  = rv > rs ? 1 : rv < rs ? -1 : 0
+    raw_score = ema_vote + rsi_vote
+    [ema_vote, rsi_vote, raw_score]
+
+// syminfo.session returns "24x7" for assets that trade around the clock.
+// This is TradingView's own classification — reliable for any symbol.
+chart_is_24_7 = syminfo.type == "crypto" or syminfo.session == "24x7"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STALENESS DETECTION — last bar age method
+// Works for ALL asset classes and ALL broker prefixes without hardcoding.
+// Logic: fetch the open time of each symbol's last bar on the lowest timeframe.
+// If that bar opened more than STALE_MINUTES ago → market is closed → show CLO.
+// 35 minutes chosen to safely cover the 15-min bar + one bar of propagation lag.
+// ─────────────────────────────────────────────────────────────────────────────
+STALE_MINUTES = 35
+
+s1_last_bar_time = request.security(sym1, tf1, time, lookahead=barmerge.lookahead_off)
+s2_last_bar_time = request.security(sym2, tf1, time, lookahead=barmerge.lookahead_off)
+s3_last_bar_time = request.security(sym3, tf1, time, lookahead=barmerge.lookahead_off)
+
+s1_type      = request.security(sym1, tf1, syminfo.type)
+s2_type      = request.security(sym2, tf1, syminfo.type)
+s3_type      = request.security(sym3, tf1, syminfo.type)
+
+s1_is_crypto = s1_type == "crypto"
+s2_is_crypto = s2_type == "crypto"
+s3_is_crypto = s3_type == "crypto"
+
+s1_bar_age_min = (timenow - s1_last_bar_time) / 60000
+s2_bar_age_min = (timenow - s2_last_bar_time) / 60000
+s3_bar_age_min = (timenow - s3_last_bar_time) / 60000
+
+s1_stale = not s1_is_crypto and s1_bar_age_min > STALE_MINUTES
+s2_stale = not s2_is_crypto and s2_bar_age_min > STALE_MINUTES
+s3_stale = not s3_is_crypto and s3_bar_age_min > STALE_MINUTES
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPUTE SCORES — 3 symbols × 5 timeframes = 15 security calls
+// ─────────────────────────────────────────────────────────────────────────────
+[s1t1_ev, s1t1_rv, s1t1_raw] = f_tf_score(sym1, tf1)
+[s1t2_ev, s1t2_rv, s1t2_raw] = f_tf_score(sym1, tf2)
+[s1t3_ev, s1t3_rv, s1t3_raw] = f_tf_score(sym1, tf3)
+[s1t4_ev, s1t4_rv, s1t4_raw] = f_tf_score(sym1, tf4)
+[s1t5_ev, s1t5_rv, s1t5_raw] = f_tf_score(sym1, tf5)
+
+[s2t1_ev, s2t1_rv, s2t1_raw] = f_tf_score(sym2, tf1)
+[s2t2_ev, s2t2_rv, s2t2_raw] = f_tf_score(sym2, tf2)
+[s2t3_ev, s2t3_rv, s2t3_raw] = f_tf_score(sym2, tf3)
+[s2t4_ev, s2t4_rv, s2t4_raw] = f_tf_score(sym2, tf4)
+[s2t5_ev, s2t5_rv, s2t5_raw] = f_tf_score(sym2, tf5)
+
+[s3t1_ev, s3t1_rv, s3t1_raw] = f_tf_score(sym3, tf1)
+[s3t2_ev, s3t2_rv, s3t2_raw] = f_tf_score(sym3, tf2)
+[s3t3_ev, s3t3_rv, s3t3_raw] = f_tf_score(sym3, tf3)
+[s3t4_ev, s3t4_rv, s3t4_raw] = f_tf_score(sym3, tf4)
+[s3t5_ev, s3t5_rv, s3t5_raw] = f_tf_score(sym3, tf5)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEIGHTED COMPOSITE SCORES — per symbol
+// Theoretical range ≈ ±14 (max raw ±2, weight sum 7.0); documented as ±15
+// ─────────────────────────────────────────────────────────────────────────────
+s1_score = w1*s1t1_raw + w2*s1t2_raw + w3*s1t3_raw + w4*s1t4_raw + w5*s1t5_raw
+s2_score = w1*s2t1_raw + w2*s2t2_raw + w3*s2t3_raw + w4*s2t4_raw + w5*s2t5_raw
+s3_score = w1*s3t1_raw + w2*s3t2_raw + w3*s3t3_raw + w4*s3t4_raw + w5*s3t5_raw
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VOLUME FILTER — chart symbol; gates signal generation only, not score display
+// ─────────────────────────────────────────────────────────────────────────────
+vol_ok = true
+if use_vol_filter
+    vol_ok := volume > ta.sma(volume, vol_sma_len)
+
+vol_label = not use_vol_filter ? "OFF" : vol_ok ? "OK" : "LOW"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNAL CONDITIONS — based on sym1 (chart symbol)
+// ─────────────────────────────────────────────────────────────────────────────
+long_signal  = s1_score >= sig_threshold  and vol_ok
+short_signal = s1_score <= -sig_threshold and vol_ok
+
+// Fresh trigger only — fires on the bar where signal transitions false→true
+long_arrow  = long_signal  and not long_signal[1]
+short_arrow = short_signal and not short_signal[1]
+
+// NOTE: Signal arrows appear on the price chart when overlay=true
+// (default). If you manually switch to overlay=false to view the
+// composite score as a histogram, change location to
+// location.bottom and location.top respectively.
+plotshape(show_arrows and long_arrow,  title="Long Signal",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.lime, 0), size=size.normal, display=display.pane)
+plotshape(show_arrows and short_arrow, title="Short Signal", style=shape.triangledown, location=location.abovebar, color=color.new(color.red,  0), size=size.normal, display=display.pane)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+f_vote_char(vote) =>
+    vote == 1 ? "▲" : vote == -1 ? "▼" : "–"
+
+f_tf_cell_text(ev, rv) =>
+    f_vote_char(ev) + f_vote_char(rv)
+
+f_raw_color(raw) =>
+    raw == 2  ? color.new(color.lime, 10) :
+     raw == 1  ? color.new(color.lime, 40) :
+     raw == 0  ? color.new(color.gray, 50) :
+     raw == -1 ? color.new(color.red,  40) :
+                 color.new(color.red,  10)
+
+f_wscore_color(score) =>
+    score >= sig_threshold  ? color.new(color.lime, 10) :
+     score <= -sig_threshold ? color.new(color.red,  10) :
+                               color.new(color.gray, 60)
+
+f_vol_color(ok) =>
+    ok ? color.new(color.teal, 30) : color.new(color.orange, 30)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD TABLE
+// Row 0: base-chart 24/7 status banner (spans all columns)
+// Row 1: header  | Row 2–4: symbols  | Row 5: score  | Row 6: footer
+// Columns: Symbol | TF1 | TF2 | TF3 | TF4 | TF5 | WScore | (Vol)
+// Each TF cell shows two characters: ema_vote_char + rsi_vote_char
+// ─────────────────────────────────────────────────────────────────────────────
+tpos = switch dash_pos
+    "Top Right"    => position.top_right
+    "Top Left"     => position.top_left
+    "Bottom Right" => position.bottom_right
+    => position.bottom_left
+
+n_cols = show_vol_col ? 8 : 7
+var table dash = table.new(tpos, n_cols, 7, border_width=1, border_color=color.new(color.white, 60), frame_width=2, frame_color=color.new(color.white, 40))
+
+C_BG   = color.new(color.black, 20)
+C_HEAD = color.new(color.navy, 10)
+C_TXT  = color.white
+C_CLO  = color.new(color.gray, 50)
+SZ_H   = size.small
+SZ_C   = size.small
+
+if barstate.islast
+    // Banner row (row 0) — base chart 24/7 status
+    banner_text = chart_is_24_7 ? "✓ Base chart is 24/7 — all data live" : "⚠ Base chart is NOT 24/7 — crypto scores may be stale"
+    banner_bg   = chart_is_24_7 ? color.rgb(0, 120, 0) : color.rgb(160, 40, 0)
+    table.cell(dash, 0, 0, banner_text, bgcolor=banner_bg, text_color=color.white, text_size=size.small)
+    table.merge_cells(dash, 0, 0, show_vol_col ? 7 : 6, 0)
+
+    // Header row (row 1)
+    table.cell(dash, 0, 1, "Symbol",  bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 1, 1, tf1,       bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 2, 1, tf2,       bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 3, 1, tf3,       bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 4, 1, tf4,       bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 5, 1, tf5,       bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    table.cell(dash, 6, 1, "WScore",  bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+    if show_vol_col
+        table.cell(dash, 7, 1, "Vol", bgcolor=C_HEAD, text_color=C_TXT, text_size=SZ_H)
+
+    // Symbol 1 (row 2)
+    table.cell(dash, 0, 2, sym1, bgcolor=C_BG, text_color=C_TXT, text_size=SZ_C)
+    if s1_stale
+        table.cell(dash, 1, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 2, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+    else
+        table.cell(dash, 1, 2, f_tf_cell_text(s1t1_ev, s1t1_rv), bgcolor=f_raw_color(s1t1_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 2, f_tf_cell_text(s1t2_ev, s1t2_rv), bgcolor=f_raw_color(s1t2_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 2, f_tf_cell_text(s1t3_ev, s1t3_rv), bgcolor=f_raw_color(s1t3_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 2, f_tf_cell_text(s1t4_ev, s1t4_rv), bgcolor=f_raw_color(s1t4_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 2, f_tf_cell_text(s1t5_ev, s1t5_rv), bgcolor=f_raw_color(s1t5_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 2, str.tostring(s1_score, "#.#"),     bgcolor=f_wscore_color(s1_score), text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 2, vol_label, bgcolor=f_vol_color(vol_ok), text_color=C_TXT, text_size=SZ_C)
+
+    // Symbol 2 (row 3)
+    table.cell(dash, 0, 3, sym2, bgcolor=C_BG, text_color=C_TXT, text_size=SZ_C)
+    if s2_stale
+        table.cell(dash, 1, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 3, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+    else
+        table.cell(dash, 1, 3, f_tf_cell_text(s2t1_ev, s2t1_rv), bgcolor=f_raw_color(s2t1_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 3, f_tf_cell_text(s2t2_ev, s2t2_rv), bgcolor=f_raw_color(s2t2_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 3, f_tf_cell_text(s2t3_ev, s2t3_rv), bgcolor=f_raw_color(s2t3_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 3, f_tf_cell_text(s2t4_ev, s2t4_rv), bgcolor=f_raw_color(s2t4_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 3, f_tf_cell_text(s2t5_ev, s2t5_rv), bgcolor=f_raw_color(s2t5_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 3, str.tostring(s2_score, "#.#"),     bgcolor=f_wscore_color(s2_score), text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 3, vol_label, bgcolor=f_vol_color(vol_ok), text_color=C_TXT, text_size=SZ_C)
+
+    // Symbol 3 (row 4)
+    table.cell(dash, 0, 4, sym3, bgcolor=C_BG, text_color=C_TXT, text_size=SZ_C)
+    if s3_stale
+        table.cell(dash, 1, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 4, "CLO", bgcolor=C_CLO, text_color=C_TXT, text_size=SZ_C)
+    else
+        table.cell(dash, 1, 4, f_tf_cell_text(s3t1_ev, s3t1_rv), bgcolor=f_raw_color(s3t1_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 2, 4, f_tf_cell_text(s3t2_ev, s3t2_rv), bgcolor=f_raw_color(s3t2_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 3, 4, f_tf_cell_text(s3t3_ev, s3t3_rv), bgcolor=f_raw_color(s3t3_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 4, 4, f_tf_cell_text(s3t4_ev, s3t4_rv), bgcolor=f_raw_color(s3t4_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 5, 4, f_tf_cell_text(s3t5_ev, s3t5_rv), bgcolor=f_raw_color(s3t5_raw),    text_color=C_TXT, text_size=SZ_C)
+        table.cell(dash, 6, 4, str.tostring(s3_score, "#.#"),     bgcolor=f_wscore_color(s3_score), text_color=C_TXT, text_size=SZ_C)
+        if show_vol_col
+            table.cell(dash, 7, 4, vol_label, bgcolor=f_vol_color(vol_ok), text_color=C_TXT, text_size=SZ_C)
+
+    // Score row (row 5) — composite score for sym1 spanning full table width
+    s1_score_bg = s1_score >= sig_threshold  ? color.new(color.lime, 10) :
+                  s1_score <= -sig_threshold ? color.new(color.red,  10) :
+                  s1_score >  0             ? color.new(color.lime, 50) :
+                  s1_score <  0             ? color.new(color.red,  50) :
+                                              color.new(color.gray, 60)
+    table.cell(dash, 0, 5, "Score: " + str.tostring(s1_score, "#.##"), bgcolor=s1_score_bg, text_color=C_TXT, text_size=SZ_C)
+    table.merge_cells(dash, 0, 5, show_vol_col ? 7 : 6, 5)
+
+    // Footer legend (row 6)
+    table.cell(dash, 0, 6, "▲▲=+2  ▲–=+1  ––=0  –▼=−1  ▼▼=−2 | WScore range ±15", bgcolor=C_BG, text_color=color.new(color.silver, 20), text_size=size.tiny, tooltip="EMA vote + RSI vote per TF. Volume filter gates signals only.")
+    table.merge_cells(dash, 0, 6, show_vol_col ? 7 : 6, 6)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALERTS — {{plot_0}} resolves to the current Composite Score value
+// ─────────────────────────────────────────────────────────────────────────────
+alertcondition(long_arrow,  title="MTF v1.5 Long",       message="MTF v1.5 LONG — {{ticker}} | Score: {{plot_0}} | Threshold: +7")
+alertcondition(short_arrow, title="MTF v1.5 Short",      message="MTF v1.5 SHORT — {{ticker}} | Score: {{plot_0}} | Threshold: -7")
+alertcondition(long_arrow or short_arrow, title="MTF v1.5 Any Signal", message="MTF v1.5 Signal — {{ticker}} at {{time}}")

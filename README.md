@@ -24,7 +24,7 @@ Not just a heatmap — **a transparent dual‑vote (EMA+RSI) scoring engine acro
 
 **Market Closed (CLO State)**
 
-<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/d871bb0b6f5ea701e200c3a96eb741ddd549c8f3/Market_Closed_CLO.png" width="900" alt="Market Closed Screenshot">
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/619dead2b105b8be539d13d6788e3e885f4a3c05/Market_Closed_CLO.png" width="900" alt="Market Closed CLO Screenshot">
 
 ---
 

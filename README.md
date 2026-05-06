@@ -14,7 +14,7 @@ Not just a heatmap — **a transparent dual‑vote (EMA+RSI) scoring engine acro
 
 **BULL Market**
 
-<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/bea78e716abd1bc00231bcfba1179082e4178d0d/Bull_Market_Screenshot.png" width="600" alt="Bull Market Screenshot">
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/bea78e716abd1bc00231bcfba1179082e4178d0d/Bull_Market_Screenshot.png" width="800" alt="Bull Market Screenshot">
 
 
 **BEAR Market**

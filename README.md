@@ -14,17 +14,17 @@ Not just a heatmap — **a transparent dual‑vote (EMA+RSI) scoring engine acro
 
 **BULL Market**
 
-<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/bea78e716abd1bc00231bcfba1179082e4178d0d/Bull_Market_Screenshot.png" width="1000" alt="Bull Market Screenshot">
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/bea78e716abd1bc00231bcfba1179082e4178d0d/Bull_Market_Screenshot.png" width="900" alt="Bull Market Screenshot">
 
 
 **BEAR Market**
 
-<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/87629f308455f07d2421b586cf7315640e8cecfe/Bear_Market_Screenshot.png" width="1000" alt="Bear Market Screenshot">
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/87629f308455f07d2421b586cf7315640e8cecfe/Bear_Market_Screenshot.png" width="900" alt="Bear Market Screenshot">
 
 
 **Market Closed (CLO State)**
 
-<!-- 📸 ADD THIS NEW SCREENSHOT: CLO cells on a closed stock/ETF row while a crypto row stays live -->
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/d871bb0b6f5ea701e200c3a96eb741ddd549c8f3/Market_Closed_CLO.png" width="900" alt="Market Closed Screenshot">
 
 ---
 

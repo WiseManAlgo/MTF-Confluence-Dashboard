@@ -14,7 +14,8 @@ Not just a heatmap — **a transparent dual‑vote (EMA+RSI) scoring engine acro
 
 **BULL Market**
 
-![MTF Dashboard Bull Market Screenshot](https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/0cd59e00dc881d086a2c774ca3b52c80d8bba68a/MTF_Dashboard_Bull_2026-05-01_23.40.12.png)
+<img src="https://raw.githubusercontent.com/WiseManAlgo/MTF-Confluence-Dashboard/bea78e716abd1bc00231bcfba1179082e4178d0d/Bull_Market_Screenshot.png" width="600" alt="Bull Market Screenshot">
+
 
 **BEAR Market**
 

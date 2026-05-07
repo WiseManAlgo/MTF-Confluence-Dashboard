@@ -1,0 +1,15 @@
+Update version from 1.7.9 to 1.8.2
+
+Signal following (v1.8.0)
+Replaced the dynamic chart_signal_score (which varied across base chart timeframes) with a match to the precomputed s1_score/s2_score/s3_score. This keeps signals consistent regardless of the chart's period.
+
+Input guidance (v1.8.1) 
+TF1 is now restricted to ["1","5","15"] to guarantee reliable CLO detection.
+Group titles added: Timeframes (TF1 small → TF5 large) and Scoring — TF Weights (adjust only if you understand scoring impact).
+Each timeframe input includes a tooltip recommending ascending order.
+
+Dynamic score range (v1.8.2) 
+The footer now shows the actual theoretical maximum score: ±(2 * sum of weights) instead of the hardcoded ±15.
+
+Bug fix (v1.8.2) 
+Corrected the compilation error on chart_score = na by removing the separate initialisation and assigning the ternary result directly.
